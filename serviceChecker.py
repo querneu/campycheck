@@ -19,10 +19,12 @@ import servicemanager
 import os #aplicacoes do sistema
 import datetime
 import ctypes
+import requests
+import glob
 
-save_path = "C:/Users/Lucas.Leite/Desktop/campycheck" #change path according to your system
+save_path = "C:/Users/Lucas.Leite/Desktop/campycheck/" #change path according to your system
 
-filename = "RequestLog.txt"
+filename = "RequestLog.csv"
 completePath = os.path.join(save_path,filename)
 arquivo = open(completePath, "w+")
 
@@ -51,8 +53,40 @@ class ServiceChecker(win32serviceutil.ServiceFramework):
         self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
         # inicia o evento de parada
         win32event.SetEvent(self.hWaitStop)
+    
 
     def main(self):
+
+        def renameAllFiles():
+            for i, filename in enumerate(glob.glob(save_path+"*.txt")):
+                os.rename(filename, os.path.join(save_path, filename+".bak"))
+        def getFiles():
+            user =  "administrator@labcce.com" #Apague antes de comitar
+            password = "brzPWD@16" #Apague antes de comitar#
+            campaignId = 5005
+            
+            os.chdir(save_path)
+            for currentFile in glob.glob("*.txt"):
+                logIT("Arquivo atual: "+str(currentFile))
+                if '.txt' in currentFile:
+                    campaignFile = {'upload_file': open(save_path+currentFile, 'rb')}
+                    url = "https://192.168.110.152/unifiedconfig/config/campaign/"+str(campaignId)+"/import"
+                    request = requests.get(
+                        url,verify=False, 
+                        auth=(user,password), 
+                        data=campaignFile,
+                        headers={
+                            "content-type":"text/plain"
+                        })
+                    if request.status_code == 200:
+                        logIT(currentFile+"Success!")
+                    else:
+                        logIT(str(request.status_code))
+                        logIT(str(request.headers['content-type']))
+                        logIT(str(currentFile)+".bak"+"----Fail")
+
+
+
         def logIT(msg):
             #Escrevendo informações no log
             now = datetime.datetime.now()
@@ -64,8 +98,9 @@ class ServiceChecker(win32serviceutil.ServiceFramework):
         try:##Tentar realizar procedimentos durante o tempo da execução
             rc = None
             while rc != win32event.WAIT_OBJECT_0:
-                logIT("TESTE") #Aqui você coloca a mensagem do log para o que você quiser, operação do log sera feita a cada chamada
-                
+                logIT("Entrou no metodo principal") #Aqui você coloca a mensagem do log para o que você quiser, operação do log sera feita a cada chamada
+                getFiles()
+                renameAllFiles()
                 rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
             arquivo.write(str(datetime.datetime.now())+" - Fechando serviço\n")
             arquivo.close()
