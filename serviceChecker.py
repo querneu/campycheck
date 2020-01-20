@@ -79,11 +79,10 @@ class ServiceChecker(win32serviceutil.ServiceFramework):
                             "content-type":"text/plain"
                         })
                     if request.status_code == 200:
-                        logIT(currentFile+"Success!")
+                        logIT(str(now)+currentFile+"Success!")
                     else:
-                        logIT(str(request.status_code))
-                        logIT(str(request.headers['content-type']))
-                        logIT(str(currentFile)+".bak"+"----Fail")
+                        logIT(str(now)+str(request.status_code))
+                        logIT(str(now)+str(currentFile)+".bak"+"----Fail")
 
 
 
@@ -98,7 +97,7 @@ class ServiceChecker(win32serviceutil.ServiceFramework):
         try:##Tentar realizar procedimentos durante o tempo da execução
             rc = None
             while rc != win32event.WAIT_OBJECT_0:
-                logIT("Entrou no metodo principal") #Aqui você coloca a mensagem do log para o que você quiser, operação do log sera feita a cada chamada
+                logIT(str(now)+"Entrou no metodo principal") #Aqui você coloca a mensagem do log para o que você quiser, operação do log sera feita a cada chamada
                 getFiles()
                 renameAllFiles()
                 rc = win32event.WaitForSingleObject(self.hWaitStop, 5000)
